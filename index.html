@@ -128,6 +128,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     let chartInstance;
+
+    // ฟังก์ชันดึงข้อมูลจาก API
     function fetchData() {
         fetch("http://localhost:3000/data")
             .then(response => response.json())
@@ -137,6 +139,8 @@
             })
             .catch(error => console.error("Error fetching data:", error));
     }
+
+    // ฟังก์ชันอัปโหลดไฟล์
     function uploadFile() {
         const fileInput = document.getElementById("fileInput").files[0];
         if (!fileInput) {
@@ -156,10 +160,16 @@
         })
         .catch(error => console.error("Error uploading file:", error));
     }
+
+    // ฟังก์ชันอัปเดตตาราง
     function updateTable(data) {
         const table = document.getElementById("data-table");
-        table.innerHTML = "";
-        data.forEach(item => {
+        table.innerHTML = "";  // เคลียร์ตารางก่อนการอัปเดต
+
+        // แสดงแค่ 6 รายการล่าสุด
+        const latestData = data.slice(-6);
+        
+        latestData.forEach(item => {
             table.innerHTML += `
                 <tr>
                     <td>${item.date || "N/A"}</td>
@@ -171,28 +181,39 @@
             `;
         });
     }
+
+    // ฟังก์ชันอัปเดตกราฟ
     function updateChart(data) {
         const labels = data.map(item => item.date || "N/A");
         const helmetData = data.map(item => item.helmet || 0);
         const noHelmetData = data.map(item => item.noHelmet || 0);
         const ctx = document.getElementById("barChart").getContext("2d");
+
         if (chartInstance) {
             chartInstance.destroy();
         }
+
         chartInstance = new Chart(ctx, {
             type: "bar",
             data: {
-                labels: labels,
+                labels: labels,  // แสดงข้อมูลทั้งหมด
                 datasets: [
                     { label: "✅ Helmet", backgroundColor: "#22C55E", data: helmetData },
                     { label: "❌ No Helmet", backgroundColor: "#EF4444", data: noHelmetData }
                 ]
             },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                scales: { y: { beginAtZero: true } } 
+            }
         });
     }
-    setInterval(fetchData, 5000);
+
+    // เรียกฟังก์ชันเริ่มต้น
+    setInterval(fetchData, 5000); // ดึงข้อมูลใหม่ทุกๆ 5 วินาที
     fetchData();
 </script>
+
 </body>
 </html>
