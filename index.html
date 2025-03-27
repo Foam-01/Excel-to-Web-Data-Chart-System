@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helmet Detection System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Poppins", sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1E293B, #0F172A);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-in-out;
+        }
+        h2 {
+            text-align: center;
+            color: #FACC15;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .upload-box {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            padding: 10px;
+            background: white;
+            color: black;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button {
+            padding: 12px 20px;
+            margin-top: 10px;
+            background: #FACC15;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        button:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        th {
+            background: rgba(0, 0, 0, 0.4);
+            color: #FACC15;
+        }
+        tr:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+        }
+        .chart-container {
+            margin-top: 25px;
+            height: 300px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚀 Helmet Detection System</h2>
+    
+    <div class="upload-box">
+        <input type="file" id="fileInput">
+        <button onclick="uploadFile()">📤 Upload</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>📅 Date</th>
+                <th>📷 Camera</th>
+                <th>✅ Helmet</th>
+                <th>❌ No Helmet</th>
+                <th>📸 Image</th>
+            </tr>
+        </thead>
+        <tbody id="data-table">
+        </tbody>
+    </table>
+
+    <div class="chart-container">
+        <canvas id="barChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let chartInstance;
+    function fetchData() {
+        fetch("http://localhost:3000/data")
+            .then(response => response.json())
+            .then(data => {
+                updateTable(data);
+                updateChart(data);
+            })
+            .catch(error => console.error("Error fetching data:", error));
+    }
+    function uploadFile() {
+        const fileInput = document.getElementById("fileInput").files[0];
+        if (!fileInput) {
+            alert("Please select an Excel file!");
+            return;
+        }
+        const formData = new FormData();
+        formData.append("file", fileInput);
+        fetch("http://localhost:3000/upload", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert("📂 Upload successful!");
+            fetchData();
+        })
+        .catch(error => console.error("Error uploading file:", error));
+    }
+    function updateTable(data) {
+        const table = document.getElementById("data-table");
+        table.innerHTML = "";
+        data.forEach(item => {
+            table.innerHTML += `
+                <tr>
+                    <td>${item.date || "N/A"}</td>
+                    <td>${item.camera || "N/A"}</td>
+                    <td>${item.helmet || 0}</td>
+                    <td>${item.noHelmet || 0}</td>
+                    <td><img src="${item.image || 'https://via.placeholder.com/50'}"></td>
+                </tr>
+            `;
+        });
+    }
+    function updateChart(data) {
+        const labels = data.map(item => item.date || "N/A");
+        const helmetData = data.map(item => item.helmet || 0);
+        const noHelmetData = data.map(item => item.noHelmet || 0);
+        const ctx = document.getElementById("barChart").getContext("2d");
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        chartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: "✅ Helmet", backgroundColor: "#22C55E", data: helmetData },
+                    { label: "❌ No Helmet", backgroundColor: "#EF4444", data: noHelmetData }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+        });
+    }
+    setInterval(fetchData, 5000);
+    fetchData();
+</script>
+</body>
+</html>
